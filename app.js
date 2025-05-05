@@ -6,10 +6,10 @@ const flowersRouter = require('./routes/flowers');
 const zakazRouter = require('./routes/zakaz');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000; // Используем порт из переменной окружения
 
 // Настройка путей
-const imagesPath = path.join(__dirname, '../public/images');
+const imagesPath = path.join(__dirname, 'public/images'); // Убрал ../ для Render
 
 // Проверка папки с изображениями
 if (!fs.existsSync(imagesPath)) {
@@ -18,8 +18,14 @@ if (!fs.existsSync(imagesPath)) {
 }
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['https://server-s923.onrender.com', 'http://localhost:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Статические файлы
 app.use('/images', express.static(imagesPath));
@@ -38,13 +44,21 @@ app.get('/test-image', (req, res) => {
   }
 });
 
+// Health check для Render
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK' });
+});
+
 // Маршруты API
 app.use('/api/flowers', flowersRouter);
 app.use('/api/zakaz', zakazRouter);
 
 // Запуск сервера
 app.listen(PORT, () => {
-  console.log(`Сервер запущен на http://localhost:${PORT}`);
+  console.log(`Сервер запущен на https://server-s923.onrender.com`);
+  console.log(`Локальный доступ: http://localhost:${PORT}`);
   console.log(`Путь к изображениям: ${imagesPath}`);
-  console.log(`Проверка: http://localhost:${PORT}/test-image`);
+  console.log(`Тестовые маршруты:`);
+  console.log(`- https://server-s923.onrender.com/health`);
+  console.log(`- https://server-s923.onrender.com/test-image`);
 });
