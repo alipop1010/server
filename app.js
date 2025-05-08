@@ -2,57 +2,64 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
+const flowersRouter = require('./routes/flowers');
+const zakazRouter = require('./routes/zakaz');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000; // Используем порт из переменной окружения
 
-// 1. Абсолютный путь к изображениям
-const imagesPath = path.join(__dirname, 'public/images');
+// Настройка путей
+const imagesPath = path.join(__dirname, 'public/images'); // Убрал ../ для Render
 
-// 2. Создаём папку если её нет
+// Проверка папки с изображениями
 if (!fs.existsSync(imagesPath)) {
-  console.log('Создаю папку для изображений:', imagesPath);
+  console.error('Папка images не найдена! Создаю...');
   fs.mkdirSync(imagesPath, { recursive: true });
 }
 
-// 3. Middleware
-app.use(cors());
-app.use(express.json());
+// Middleware
+app.use(cors({
+  origin: ['https://server-s923.onrender.com', 'http://localhost:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
 
-// 4. Статические файлы
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Статические файлы
 app.use('/images', express.static(imagesPath));
 
-// 5. Маршрут для проверки изображений
-app.get('/api/images-check', (req, res) => {
-  try {
-    const files = fs.existsSync(imagesPath) 
-      ? fs.readdirSync(imagesPath).filter(f => /\.(jpe?g|png)$/i.test(f))
-      : [];
-
-    res.json({
-      status: 'OK',
-      imagesPath: imagesPath,
-      files: files,
-      exampleUrl: files.length > 0 
-        ? `https://${req.get('host')}/images/${files[0]}`
-        : 'No images found'
+// Тестовый маршрут
+app.get('/test-image', (req, res) => {
+  const testFile = path.join(imagesPath, 'flower_1.jpeg');
+  if (fs.existsSync(testFile)) {
+    res.sendFile(testFile);
+  } else {
+    res.status(404).json({
+      error: 'Изображение не найдено',
+      path: testFile,
+      advice: 'Поместите flower_1.jpeg в папку public/images'
     });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
   }
 });
 
-// 6. Простой тестовый маршрут
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'Сервер работает!' });
+// Health check для Render
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK' });
 });
 
-// 7. Запуск сервера
+// Маршруты API
+app.use('/api/flowers', flowersRouter);
+app.use('/api/zakaz', zakazRouter);
+
+// Запуск сервера
 app.listen(PORT, () => {
-  console.log(`
-  🚀 Сервер запущен на порту ${PORT}
-  📁 Путь к изображениям: ${imagesPath}
-  🔍 Проверка: https://your-server.onrender.com/api/images-check
-  🌐 Пример: https://your-server.onrender.com/images/flower_1.jpeg
-  `);
+  console.log(`Сервер запущен на https://server-s923.onrender.com`);
+  console.log(`Локальный доступ: http://localhost:${PORT}`);
+  console.log(`Путь к изображениям: ${imagesPath}`);
+  console.log(`Тестовые маршруты:`);
+  console.log(`- https://server-s923.onrender.com/health`);
+  console.log(`- https://server-s923.onrender.com/test-image`);
 });
+ 
