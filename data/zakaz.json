@@ -9,7 +9,7 @@
     "address": "г. Москва, ул. Иванова, д. 15",
     "registration_date": "2023-12-08",
     "status": "inactive",
-    "photo": "/images/z1.jpeg"
+    "photo": "https://server-s923.onrender.com/images/z1.jpeg"
   },
   {
     "id": "629fc889-829f-47b3-854b-4502b7de07ca",
@@ -21,7 +21,7 @@
     "address": "г. Москва, ул. Сидорова, д. 18",
     "registration_date": "2024-03-25",
     "status": "active",
-    "photo": "/images/z3.jpeg"
+    "photo": "https://server-s923.onrender.com/images/z3.jpeg"
   },
   {
     "id": "dd71e681-5cd5-470f-a8a3-a02222292300",
