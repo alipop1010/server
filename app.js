@@ -1,42 +1,56 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Абсолютный путь к изображениям
+// 1. Абсолютный путь к изображениям
 const imagesPath = path.join(__dirname, 'public', 'images');
 
-// Проверка существования файлов
-app.use('/images', (req, res, next) => {
-  const filePath = path.join(imagesPath, req.path);
-  
-  if (fs.existsSync(filePath)) {
-    express.static(imagesPath)(req, res, next);
-  } else {
-    console.error('Файл не найден:', filePath);
-    res.status(404).json({
-      error: 'Image not found',
-      absolutePath: filePath,
-      availableFiles: fs.readdirSync(imagesPath)
+// 2. Проверка существования папки и файлов
+console.log('Путь к изображениям:', imagesPath);
+try {
+  console.log('Содержимое папки images:', fs.readdirSync(imagesPath));
+} catch (err) {
+  console.error('Ошибка чтения папки images:', err);
+}
+
+// 3. Настройка CORS
+app.use(cors());
+
+// 4. Обслуживание статических файлов
+app.use('/images', express.static(imagesPath, {
+  setHeaders: (res) => {
+    res.set('Cache-Control', 'public, max-age=86400');
+  }
+}));
+
+// 5. Маршрут для проверки изображений
+app.get('/debug-images', (req, res) => {
+  try {
+    const files = fs.readdirSync(imagesPath);
+    res.json({
+      status: 'OK',
+      imagePath: imagesPath,
+      files: files,
+      testUrl: `https://${process.env.RENDER_EXTERNAL_HOSTNAME || 'localhost:'+PORT}/images/z1.jpeg`
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Ошибка чтения папки',
+      message: error.message,
+      path: imagesPath
     });
   }
 });
 
-// Тестовый маршрут
-app.get('/debug-images', (req, res) => {
-  res.json({
-    imagesPath: imagesPath,
-    files: fs.readdirSync(imagesPath),
-    exists: {
-      'favicon.ico': fs.existsSync(path.join(imagesPath, 'favicon.ico')),
-      'z1.jpeg': fs.existsSync(path.join(imagesPath, 'z1.jpeg'))
-    }
-  });
-});
+// ... остальные маршруты ...
 
 app.listen(PORT, () => {
-  console.log(`Сервер запущен. Проверьте:`);
-  console.log(`https://your-service.onrender.com/debug-images`);
+  console.log(`Сервер запущен на порту ${PORT}`);
+  console.log(`Проверьте изображения:`);
+  console.log(`https://your-render-service.onrender.com/debug-images`);
+  console.log(`Пример изображения: https://your-render-service.onrender.com/images/z1.jpeg`);
 });
